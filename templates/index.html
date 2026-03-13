@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuizForge — AI Quiz Generator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Ambient background canvas -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- ──────────── LANDING ──────────── -->
+  <section id="landing" class="screen active">
+    <div class="landing-inner">
+
+      <div class="wordmark">
+        <div class="wordmark-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <span class="wordmark-text">Quiz<span>Forge</span></span>
+      </div>
+
+      <div class="badge-pill">
+        <span class="badge-dot"></span>
+        Powered by AI
+      </div>
+
+      <h1 class="hero-title">
+        Forge your<br><em>perfect quiz</em>
+      </h1>
+
+      <p class="hero-sub">
+        Generate beautifully crafted questions on any topic in seconds.
+        Test yourself, challenge friends, or prepare for exams.
+      </p>
+
+      <!-- <div class="glass-card form-card"> -->
+      <form class="glass-card form-card" id="quizForm">
+
+  <div class="form-group">
+    <label for="topicInput">
+      <span class="label-icon">◈</span> Topic
+    </label>
+    <input
+      type="text"
+      id="topicInput"
+      name="topic"
+      placeholder="e.g. Quantum Physics, World History, Python…"
+      autocomplete="off"
+      required
+    />
+  </div>
+
+  <div class="form-row">
+
+    <div class="form-group half">
+      <label for="numInput">
+        <span class="label-icon">◈</span> Questions
+      </label>
+
+      <div class="num-input-wrapper">
+        <button type="button" class="num-btn" id="numMinus">−</button>
+
+        <input
+          type="number"
+          id="numInput"
+          name="num_questions"
+          value="5"
+          min="1"
+          max="20"
+          readonly
+        />
+
+        <button type="button" class="num-btn" id="numPlus">+</button>
+      </div>
+
+    </div>
+
+    <div class="form-group half">
+      <label for="diffSelect">
+        <span class="label-icon">◈</span> Difficulty
+      </label>
+
+      <div class="select-wrapper">
+        <select id="diffSelect" name="difficulty">
+
+          <option value="easy">🟢 Easy</option>
+          <option value="medium" selected>🟡 Medium</option>
+          <option value="hard">🔴 Hard</option>
+
+        </select>
+
+        <span class="select-arrow">▾</span>
+      </div>
+    </div>
+
+  </div>
+
+  <button type="submit" id="generateBtn" class="btn-primary">
+
+    <span class="btn-text">Generate Quiz</span>
+    <span class="btn-shine"></span>
+    <div class="btn-spinner"></div>
+
+    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+
+  </button>
+
+</form>
+
+      <div class="stats-row">
+        <div class="stat">
+          <span class="stat-num">∞</span>
+          <span class="stat-label">Topics</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-num">20</span>
+          <span class="stat-label">Max Qs</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-num">3</span>
+          <span class="stat-label">Difficulties</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ──────────── LOADING ──────────── -->
+  <section id="loadingScreen" class="screen">
+    <div class="loading-inner">
+      <div class="forge-loader">
+        <div class="forge-ring ring-1"></div>
+        <div class="forge-ring ring-2"></div>
+        <div class="forge-ring ring-3"></div>
+        <div class="forge-core">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+      </div>
+
+      <p class="loading-text" id="loadingText">Forging your questions…</p>
+
+      <div class="loading-bar-track">
+        <div class="loading-bar-fill" id="loadingBarFill"></div>
+      </div>
+
+      <div class="loading-steps">
+        <span class="loading-step active" id="step1"><span class="step-dot"></span>Analyzing</span>
+        <span class="step-sep">·</span>
+        <span class="loading-step" id="step2"><span class="step-dot"></span>Crafting</span>
+        <span class="step-sep">·</span>
+        <span class="loading-step" id="step3"><span class="step-dot"></span>Polishing</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ──────────── QUIZ SCREEN ──────────── -->
+  <section id="quizScreen" class="screen">
+
+    <header class="quiz-header">
+      <button id="backBtn" class="back-btn" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        New Quiz
+      </button>
+      <div class="quiz-meta">
+        <span id="quizTopicLabel" class="quiz-topic-pill"></span>
+        <span id="progressLabel" class="progress-label">0 / 5</span>
+      </div>
+    </header>
+
+    <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="progress-fill" id="progressFill"></div>
+      <div class="progress-glow" id="progressGlow"></div>
+    </div>
+
+    <div class="questions-container" id="questionsContainer"></div>
+
+    <div class="submit-bar" id="submitBar">
+      <div class="submit-bar-inner">
+        <span class="answered-count" id="answeredCount"><strong>0</strong> of 5 answered</span>
+        <button id="submitBtn" class="btn-primary" disabled>
+          <span class="btn-text">Submit Quiz</span>
+          <span class="btn-shine"></span>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ──────────── RESULTS ──────────── -->
+  <section id="resultsScreen" class="screen">
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- Score ring gradient defs -->
+    <svg width="0" height="0" style="position:absolute;pointer-events:none">
+      <defs>
+        <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#1B2048"/>
+          <stop offset="100%" stop-color="#C8630A"/>
+        </linearGradient>
+      </defs>
+    </svg>
+
+    <div class="results-inner">
+
+      <div class="score-badge" id="scoreBadge">
+        <svg class="score-ring" viewBox="0 0 120 120">
+          <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="score-ring-fill" id="scoreRingFill" cx="60" cy="60" r="52"/>
+        </svg>
+        <div class="score-number-wrap">
+          <span class="score-number" id="scoreNumber">0</span>
+          <span class="score-denom" id="scoreDenom">/5</span>
+        </div>
+      </div>
+
+      <div class="result-emoji" id="resultEmoji">🏆</div>
+      <h2 class="result-title" id="resultTitle">Excellent Work!</h2>
+      <p class="result-sub" id="resultSub">You scored <strong id="resultPct">0%</strong> on this quiz.</p>
+
+      <div class="result-stats">
+        <div class="result-stat correct">
+          <span class="rs-icon">✓</span>
+          <span class="rs-num" id="correctCount">0</span>
+          <span class="rs-label">Correct</span>
+        </div>
+        <div class="result-stat wrong">
+          <span class="rs-icon">✗</span>
+          <span class="rs-num" id="wrongCount">0</span>
+          <span class="rs-label">Wrong</span>
+        </div>
+        <div class="result-stat skipped">
+          <span class="rs-icon">–</span>
+          <span class="rs-num" id="skippedCount">0</span>
+          <span class="rs-label">Skipped</span>
+        </div>
+      </div>
+
+      <div class="result-review" id="resultReview"></div>
+
+      <div class="result-actions">
+        <button id="retryBtn" class="btn-secondary">↺ Retry Quiz</button>
+        <button id="newQuizBtn" class="btn-primary">
+          <span class="btn-text">New Quiz</span>
+          <span class="btn-shine"></span>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Quiz History{% endblock %}
+
+{% block content %}
+<div class="history-page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Quiz History</h1>
+      <p class="page-sub">Your complete learning journey</p>
+    </div>
+    <a href="{{ url_for('quiz') }}" class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      New Quiz
+    </a>
+  </div>
+
+  {% if pagination.items %}
+
+  <!-- Filters -->
+  <div class="history-filters">
+    <div class="filter-tabs" id="filterTabs">
+      <button class="filter-tab active" data-filter="all">All</button>
+      <button class="filter-tab" data-filter="easy">Easy</button>
+      <button class="filter-tab" data-filter="medium">Medium</button>
+      <button class="filter-tab" data-filter="hard">Hard</button>
+    </div>
+    <div class="history-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search topics..." id="historySearch" class="search-input" />
+    </div>
+  </div>
+
+  <div class="history-table-wrap">
+    <table class="history-table" id="historyTable">
+      <thead>
+        <tr>
+          <th class="sortable" data-col="topic">Topic <span class="sort-icon">↕</span></th>
+          <th class="sortable" data-col="difficulty">Difficulty <span class="sort-icon">↕</span></th>
+          <th class="sortable" data-col="score">Score <span class="sort-icon">↕</span></th>
+          <th>Progress</th>
+          <th class="sortable" data-col="grade">Grade <span class="sort-icon">↕</span></th>
+          <th class="sortable" data-col="date">Date <span class="sort-icon">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="historyBody">
+        {% for quiz in pagination.items %}
+        <tr class="history-row" data-difficulty="{{ quiz.difficulty }}" data-topic="{{ quiz.topic.lower() }}">
+          <td class="h-topic">
+            <div class="topic-icon-wrap">
+              <span class="topic-initial">{{ quiz.topic[0].upper() }}</span>
+            </div>
+            <div>
+              <span class="topic-name">{{ quiz.topic }}</span>
+              <span class="question-count">{{ quiz.total_questions }} questions</span>
+            </div>
+          </td>
+          <td>
+            <span class="diff-badge diff-{{ quiz.difficulty }}">{{ quiz.difficulty.title() }}</span>
+          </td>
+          <td class="h-score">
+            <strong>{{ quiz.score }}</strong><span class="total-q">/{{ quiz.total_questions }}</span>
+            <span class="pct-text">({{ quiz.percentage }}%)</span>
+          </td>
+          <td class="h-bar-cell">
+            <div class="h-bar">
+              <div class="h-bar-fill" style="width: {{ quiz.percentage }}%; background: {% if quiz.percentage >= 70 %}var(--success){% elif quiz.percentage >= 50 %}var(--amber){% else %}var(--danger){% endif %};"></div>
+            </div>
+          </td>
+          <td>
+            <span class="grade-badge grade-{{ quiz.grade.replace('+','plus') }}">{{ quiz.grade }}</span>
+          </td>
+          <td class="h-date">{{ quiz.date.strftime('%b %d, %Y') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+  <div class="pagination">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('history', page=pagination.prev_num) }}" class="page-btn">← Prev</a>
+    {% endif %}
+
+    {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if page_num %}
+        <a href="{{ url_for('history', page=page_num) }}"
+           class="page-btn {{ 'page-active' if page_num == pagination.page }}">{{ page_num }}</a>
+      {% else %}
+        <span class="page-ellipsis">…</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      <a href="{{ url_for('history', page=pagination.next_num) }}" class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state empty-large">
+    <div class="empty-icon">📖</div>
+    <h3>No quizzes yet</h3>
+    <p>Take your first quiz to see your history here.</p>
+    <a href="{{ url_for('quiz') }}" class="btn-primary">Generate a Quiz</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Filter tabs
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const filter = tab.dataset.filter;
+      document.querySelectorAll('.history-row').forEach(row => {
+        if (filter === 'all' || row.dataset.difficulty === filter) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Search filter
+  const searchInput = document.getElementById('historySearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase();
+      document.querySelectorAll('.history-row').forEach(row => {
+        row.style.display = row.dataset.topic.includes(q) ? '' : 'none';
+      });
+    });
+  }
+</script>
+{% endblock %}

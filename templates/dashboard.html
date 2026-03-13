@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+
+  <!-- Hero Header -->
+  <div class="dash-header">
+    <div class="dash-header-inner">
+      <div class="dash-welcome">
+        <p class="dash-greeting">Good {{ 'morning' if now.hour < 12 else 'afternoon' if now.hour < 18 else 'evening' }},</p>
+        <h1 class="dash-name">{{ current_user.username }} <span class="wave">👋</span></h1>
+        <p class="dash-sub">Ready to challenge yourself today?</p>
+      </div>
+      <a href="{{ url_for('quiz') }}" class="btn-primary btn-lg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Generate New Quiz
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card stat-total" data-animate>
+      <div class="stat-icon">📚</div>
+      <div class="stat-body">
+        <div class="stat-value" data-count="{{ stats.total }}">{{ stats.total }}</div>
+        <div class="stat-label">Quizzes Taken</div>
+      </div>
+      <div class="stat-bg-text">TOTAL</div>
+    </div>
+
+    <div class="stat-card stat-avg" data-animate>
+      <div class="stat-icon">📊</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats.average }}<span class="stat-unit">%</span></div>
+        <div class="stat-label">Average Score</div>
+      </div>
+      <div class="stat-bg-text">AVG</div>
+    </div>
+
+    <div class="stat-card stat-best" data-animate>
+      <div class="stat-icon">🏆</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats.best }}<span class="stat-unit">%</span></div>
+        <div class="stat-label">Best Score</div>
+      </div>
+      <div class="stat-bg-text">BEST</div>
+    </div>
+  </div>
+
+  <!-- Quick Start -->
+  <div class="quick-start-section">
+    <h2 class="section-title">Quick Start</h2>
+    <div class="topic-pills">
+      <button class="topic-pill" onclick="startQuiz('Python Programming')">Python Programming</button>
+      <button class="topic-pill" onclick="startQuiz('World History')">World History</button>
+      <button class="topic-pill" onclick="startQuiz('Human Biology')">Human Biology</button>
+      <button class="topic-pill" onclick="startQuiz('Mathematics')">Mathematics</button>
+      <button class="topic-pill" onclick="startQuiz('Machine Learning')">Machine Learning</button>
+      <button class="topic-pill" onclick="startQuiz('Geography')">Geography</button>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="recent-section">
+    <div class="section-header">
+      <h2 class="section-title">Recent Activity</h2>
+      {% if recent %}
+        <a href="{{ url_for('history') }}" class="section-link">View all →</a>
+      {% endif %}
+    </div>
+
+    {% if recent %}
+    <div class="recent-table-wrap">
+      <table class="recent-table">
+        <thead>
+          <tr>
+            <th>Topic</th>
+            <th>Difficulty</th>
+            <th>Score</th>
+            <th>Grade</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for quiz in recent %}
+          <tr class="table-row" data-animate>
+            <td class="topic-cell">
+              <span class="topic-dot"></span>
+              {{ quiz.topic }}
+            </td>
+            <td>
+              <span class="diff-badge diff-{{ quiz.difficulty }}">{{ quiz.difficulty.title() }}</span>
+            </td>
+            <td class="score-cell">
+              <span class="score-text">{{ quiz.score }}/{{ quiz.total_questions }}</span>
+              <div class="mini-bar">
+                <div class="mini-bar-fill" style="width: {{ quiz.percentage }}%; background: {% if quiz.percentage >= 70 %}var(--success){% elif quiz.percentage >= 50 %}var(--amber){% else %}var(--danger){% endif %};"></div>
+              </div>
+            </td>
+            <td>
+              <span class="grade-badge grade-{{ quiz.grade.replace('+','plus') }}">{{ quiz.grade }}</span>
+            </td>
+            <td class="date-cell">{{ quiz.date.strftime('%b %d') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🎯</div>
+      <h3>No quizzes yet</h3>
+      <p>Generate your first quiz to start tracking your progress.</p>
+      <a href="{{ url_for('quiz') }}" class="btn-primary">Start a Quiz</a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function startQuiz(topic) {
+    sessionStorage.setItem('prefill_topic', topic);
+    window.location.href = '{{ url_for("quiz") }}';
+  }
+
+  // Count-up animation for stats
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = parseFloat(el.dataset.count);
+    if (target === 0) return;
+    let start = 0;
+    const duration = 1200;
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      el.textContent = Math.floor(progress * target);
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+
+  // Expose current hour to template via JS (for greeting)
+  const hour = new Date().getHours();
+  const greeting = document.querySelector('.dash-greeting');
+  if (greeting) {
+    if (hour < 12) greeting.textContent = 'Good morning,';
+    else if (hour < 18) greeting.textContent = 'Good afternoon,';
+    else greeting.textContent = 'Good evening,';
+  }
+</script>
+{% endblock %}
